@@ -1,0 +1,2 @@
+ping : 쓰레드 수 : 1000, ramp-up : 0, 루프 카운트 : 10
+calculator : 쓰레드 수 : 100, ramp-up : 10, 루프 카운트 : 1
