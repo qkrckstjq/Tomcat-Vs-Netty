@@ -21,4 +21,11 @@ public class TomCatService {
         JustText jst = new JustText(data);
         justTextRepository.save(jst);
     }
+
+    public String get() {
+        JustText justText = justTextRepository.findById(1L).orElseThrow(() ->
+                new IllegalArgumentException("없음")
+        );
+        return justText.getJustText();
+    }
 }
