@@ -24,8 +24,7 @@ public class TomCatController {
     public String post(
             @RequestBody String data
     ) {
-        tomCatService.post(data);
-        return "posted";
+        return tomCatService.post(data);
     }
 
     @GetMapping("/get")

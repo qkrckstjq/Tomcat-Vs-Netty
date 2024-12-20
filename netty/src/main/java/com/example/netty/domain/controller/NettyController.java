@@ -20,4 +20,17 @@ public class NettyController {
         nettyService.calculate();
         return Mono.just("calculate done");
     }
+
+    @PostMapping("/post")
+    public Mono<String> post(
+            @RequestBody String data
+    ) {
+        return nettyService.post(data);
+    }
+
+    @GetMapping("/get")
+    public Mono<String> get() {
+        return nettyService.get();
+    }
+
 }

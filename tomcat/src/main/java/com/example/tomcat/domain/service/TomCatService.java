@@ -17,9 +17,9 @@ public class TomCatService {
         }
     }
 
-    public void post(String data) {
+    public String post(String data) {
         JustText jst = new JustText(data);
-        justTextRepository.save(jst);
+        return justTextRepository.save(jst).getJustText();
     }
 
     public String get() {

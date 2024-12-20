@@ -1,5 +1,9 @@
 spring:
   application:
     name: netty
+  r2dbc:
+    url: r2dbc:mysql://localhost:3306/tomcatnetty
+    username: root
+    password: PCs14025487
 server:
   port: 8081
