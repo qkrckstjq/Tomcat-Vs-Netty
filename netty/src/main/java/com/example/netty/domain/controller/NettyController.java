@@ -32,5 +32,4 @@ public class NettyController {
     public Mono<String> get() {
         return nettyService.get();
     }
-
 }
