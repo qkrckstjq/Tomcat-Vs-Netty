@@ -3,15 +3,10 @@ spring:
     name: tomcat
 
   datasource:
-    driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/tomcatnetty
+    url: jdbc:mysql://host.docker.internal:3306/tomcatnetty
     username: root
     password: PCs14025487
-
-  jpa:
-    hibernate:
-      ddl-auto: update
-    show-sql: true
+    driver-class-name: com.mysql.cj.jdbc.Driver
 
 server:
   port: 8080
