@@ -32,4 +32,9 @@ public class NettyController {
     public Mono<String> get() {
         return nettyService.get();
     }
+
+    @PostMapping("/lock")
+    public Mono<String> lock() {
+        return nettyService.lock();
+    }
 }
