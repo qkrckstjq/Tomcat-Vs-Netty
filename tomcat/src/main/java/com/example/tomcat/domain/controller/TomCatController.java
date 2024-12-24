@@ -31,4 +31,9 @@ public class TomCatController {
     public String get() {
         return tomCatService.get();
     }
+
+    @PostMapping("/lock")
+    public String lock() {
+        return tomCatService.lock();
+    }
 }
