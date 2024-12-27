@@ -257,6 +257,56 @@ TPS : 778.93
 비동기 + 통신에서 callback을 받아 더 많은 요청을 수용할 수 있는 R2DBC가 JPA보다 더 높은 성능을 보인것 같다.
 
 
+## GET /get
 
+이 API는 MySQL 테이블로부터 간단한 SELECT 문을 요청하여 응답받는 API이다.
 
+__Tomcat__
+```java
+public String get() {
+    JustText justText = justTextRepository.findById(1L).orElseThrow(() ->
+            new IllegalArgumentException("없음")
+    );
+    return justText.getJustText();
+}
+```
 
+__Netty__
+```java
+public Mono<String> get() {
+    return justTextRepository.findById(1L)
+            .switchIfEmpty(Mono.error(new IllegalArgumentException("없음")))
+            .map(JustText::getJustText);
+}
+```
+
+DB와의 연결은 각각 Tomcat은 JPA, Netty는 R2DBC를 통해 통신하고 있다.
+
+부하 테스트에서 1차(스레드 100, 램프업 0, 반복 수 10)에서는 큰 차이가 없어 다음과 같은 세팅에서 테스트했다.
+
+| 설정 | 값 |
+| - | - |
+| 스레드 그룹 | 1000 |
+| 램프업 | 0 |
+| 반복 | 10 |
+
+__Tomcat__
+![3차](https://github.com/user-attachments/assets/1e8f60f2-1233-4e7d-9d41-2c2c9d4a5569)
+![2차](https://github.com/user-attachments/assets/21c210ec-ee43-43ce-9a73-581078e83d50)
+![1차](https://github.com/user-attachments/assets/74373240-ec92-4058-ab78-77bc94ebcff4)
+
+TPS : 1016.86
+
+__Netty__
+![1차](https://github.com/user-attachments/assets/bdad22df-c8bb-4cd1-a03b-751c72bbfe26)
+![3차](https://github.com/user-attachments/assets/c8d52b4a-d918-4d29-ba3d-fbbad1229abf)
+![2차](https://github.com/user-attachments/assets/cc0cb1fc-af80-45e9-ab95-f38f5cf09ac6)
+
+TPS : 1502.96
+
+### 결과
+Netty가 1.5배 정도 높은 TPS가 나왔다.
+
+톰캣은 블로킹 I/O특성으로 JPA의 과부하로 스레드가 제한되지만 그에 반해 
+
+네티는 논블로킹 I/O특성과 추가적으로 R2DBC특성으로 더 많은 요청을 처리하는 결과인 것 같다.
