@@ -8,7 +8,7 @@ __정해진 소수의 스레드를 순환(이벤트 루프)시켜 정체되는 �
 
 이 두 가지를 비교하여 상황에 따라 어떤 결과값이 나오는지 분석해보기
 
-# 테스트 전 인지해야할 부분
+# 테스트 전 기본 세팅
 - 서버는 Docker로 띄어져 있음
 - 테스트툴 Jmeter와 Docker는 같은 호스트 OS에서 구동 중
 - Docker서버는 CPU 코어 사용의 제한을 걸고 구동
@@ -95,7 +95,7 @@ CPU 사용량의 진폭이 크고 테스트 TPS의 차이가 좀 났지만 전�
 ---
 
 ## GET /calculator
-이 API는 요청 시 상당한 양의 for문 연산을 부여하여 블로킹과 논블로킹 방식의 차이점을 확인 해 볼 수 있는 API 이다.
+이 API는 요청 시 상당한 양의 for문 연산을 부여하여 블로킹과 논블로킹 방식의 차이점을 확인 하기 위한 API 이다.
 
 __Tomcat__
 ```java
@@ -194,3 +194,69 @@ calculator API의 경우 상당한 양의 계산을 하여 블로킹과 논블�
 둘다 CPU 사용의 제한이 있지만 Tomcat은 하나의 요청당 스레드가 블로킹되어 상당한 차이의 결과를 확인 할 수 있었는데
 
 응답 시간부터 TPS까지 Netty가 압도적인 모습이다.
+
+---
+
+## POST /lock
+
+이 API는 비관적락을 적용한 동시성 제어 테스트로
+
+각 톰캣과 네티에서 비관적락을 걸고 부하 테스트를 했을때 얼마만큼의 차이가 존재하지는 확인하기 위한 API이다.
+
+__Tomcat__
+```java
+@Lock(LockModeType.PESSIMISTIC_WRITE)
+@Query("SELECT pl FROM PessimisticLock pl WHERE pl.id = :id")
+Optional<PessimisticLock> findByIdWithPessimistic(Long id);
+```
+
+__Netty__
+```java
+@Lock(LockMode.PESSIMISTIC_WRITE)
+@Query("SELECT * FROM pessimistic_lock WHERE id = :id FOR UPDATE")
+Mono<PessimisticLock> findByIdWithPessimistic(Long id);
+```
+각각 JPA의 @Query, R2DBC의 @Query로 서로 다른 어노테이션의 Query이다.
+
+![제목 없음](https://github.com/user-attachments/assets/fb846c1b-b766-40bb-8753-815cf9ccebf9)
+다음과 같이 간단하게 테이블이 구성되어 있다.
+
+모든 요청은 id = 1에 요청을 보내고 딱 100명만 받을 수 있게 락을 걸었다.
+
+### 3차
+`1차 테스트와 2차 테스트 결과의 차이가 그리 크지 않아 3차로 기입`
+
+| 설정 | 값 |
+| - | - |
+| 스레드 그룹 | 10000 |
+| 램프업 | 0 |
+| 반복 | 10 |
+
+__Tomcat__
+![1차](https://github.com/user-attachments/assets/ba822bc9-fd14-4ffc-89bf-72b095f78cdb)
+![3차](https://github.com/user-attachments/assets/3dd14329-7cd3-433e-99a3-2551dfc0ebbe)
+![2차](https://github.com/user-attachments/assets/61198558-9aab-4226-8a72-de267cda21ea)
+
+TPS : 424.9
+
+__Netty__
+![1차](https://github.com/user-attachments/assets/595bf48b-ba12-448e-b5c7-21753dc38ac1)
+![3차](https://github.com/user-attachments/assets/96b04134-badd-44de-ae4d-b48efc022480)
+![2차](https://github.com/user-attachments/assets/f8e9562a-e93e-4f3d-967f-0c117d62fb2a)
+
+TPS : 778.93
+
+### 결과
+
+비관적락이 걸려있는 상황이라 전체적으로 TPS가 많이 낮아졌지만
+
+비동기처리로 진행된 Netty가 대략 2배 이하로 더 TPS가 높은 모습이 보였다.
+
+응답속도에서는 Netty가 3 ~ 4배 가량 더 빠른 응답속도를 보였다.
+
+비동기 + 통신에서 callback을 받아 더 많은 요청을 수용할 수 있는 R2DBC가 JPA보다 더 높은 성능을 보인것 같다.
+
+
+
+
+
